@@ -46,9 +46,11 @@ func (m *M) Validate(reg *regexp.Regexp) (err error) {
 		return errors.Wrapf(errors.New("wrong content length"), "%s: wrong message format", funcTitle)
 	}
 	m.isValid = true
-	content := m.body[m.headLength:]
-	if loc := reg.FindIndex(content); loc != nil && loc[0] == 0 {
-		m.tag = string(content[:loc[1]])
+	if reg != nil {
+		content := m.body[m.headLength:]
+		if loc := reg.FindIndex(content); loc != nil && loc[0] == 0 {
+			m.tag = string(content[:loc[1]])
+		}
 	}
 	return
 }

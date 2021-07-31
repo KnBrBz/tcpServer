@@ -7,7 +7,7 @@ import (
 )
 
 func TestMessageContent(t *testing.T) {
-	headLength := 2
+	headLength := HeadLength
 	tagReg := regexp.MustCompile("#.+#")
 	cases := map[string]struct {
 		Body  []byte

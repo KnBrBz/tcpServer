@@ -2,5 +2,5 @@ package setup
 
 const (
 	envHost        = "HOST"
-	envHostDefault = ""
+	envHostDefault = "127.0.0.1:9999"
 )

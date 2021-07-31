@@ -1,6 +1,8 @@
 package client
 
+import "tcpServer/message"
+
 const (
 	packageTitle  = "client: "
-	msgHeadLength = 2
+	msgHeadLength = message.HeadLength
 )

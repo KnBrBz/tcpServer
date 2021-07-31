@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"tcpServer/server/hub"
-	"tcpServer/setup"
+	"tcpServer/server/setup"
 
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"

@@ -8,7 +8,7 @@ import (
 
 	"tcpServer/message"
 	"tcpServer/server/client"
-	"tcpServer/setup"
+	"tcpServer/server/setup"
 
 	"github.com/pkg/errors"
 )
