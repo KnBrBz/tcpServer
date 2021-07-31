@@ -31,6 +31,9 @@ func (c *C) Run() (err error) {
 	const funcTitle = packageTitle + "*C.Run"
 	var tcpAddr, laddr *net.TCPAddr
 
+	if c.srvHost == c.host {
+		return errors.Wrap(errors.Errorf("host %s already specified as server host", c.host), funcTitle)
+	}
 	if tcpAddr, err = net.ResolveTCPAddr("tcp", c.srvHost); err != nil {
 		return errors.Wrapf(err, "%s: server host", funcTitle)
 	}

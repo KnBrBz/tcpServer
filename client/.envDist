@@ -1,0 +1,4 @@
+# string, default 127.0.0.1:9998
+HOST=address:port
+# string, default 127.0.0.1:9999
+SERVER_HOST=address:port
