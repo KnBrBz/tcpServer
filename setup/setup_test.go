@@ -6,7 +6,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func TestHost(t *testing.T) {
+func TestSetupHost(t *testing.T) {
 	// default value
 	stp := New()
 	if host := stp.Host(); host != envHostDefault {
