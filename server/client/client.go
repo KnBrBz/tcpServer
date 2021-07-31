@@ -9,13 +9,15 @@ import (
 type C struct {
 	uid string
 	// tag  string
-	conn *net.TCPConn
+	conn  *net.TCPConn
+	unreg chan<- string
 }
 
-func New(conn *net.TCPConn) *C {
+func New(conn *net.TCPConn, unreg chan<- string) *C {
 	return &C{
-		uid:  conn.RemoteAddr().String(),
-		conn: conn,
+		uid:   conn.RemoteAddr().String(),
+		conn:  conn,
+		unreg: unreg,
 	}
 }
 
@@ -28,6 +30,7 @@ func (c *C) run() {
 	defer func() {
 		log.Println("disconnected :" + ipStr)
 		c.conn.Close()
+		c.unreg <- c.uid
 	}()
 	var bytes []byte
 	reader := bufio.NewReader(c.conn)
