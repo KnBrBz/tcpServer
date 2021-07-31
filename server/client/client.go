@@ -4,33 +4,46 @@ import (
 	"bufio"
 	"log"
 	"net"
+	"tcpServer/server/interfaces"
+
+	"github.com/pkg/errors"
 )
 
 type C struct {
-	uid string
-	// tag  string
+	uid   string
 	conn  *net.TCPConn
-	unreg chan<- string
+	inbox chan []byte
+	hub   interfaces.Hub
 }
 
-func New(conn *net.TCPConn, unreg chan<- string) *C {
+func New(conn *net.TCPConn, hub interfaces.Hub) *C {
 	return &C{
 		uid:   conn.RemoteAddr().String(),
 		conn:  conn,
-		unreg: unreg,
+		hub:   hub,
+		inbox: make(chan []byte),
 	}
 }
 
-func (c *C) Run() {
-	go c.run()
+func (c *C) Uid() string {
+	return c.uid
 }
 
-func (c *C) run() {
+func (c *C) Run() {
+	go c.read()
+	go c.write()
+}
+
+func (c *C) Send(bytes []byte) {
+	c.inbox <- bytes
+}
+
+func (c *C) read() {
 	ipStr := c.conn.RemoteAddr().String()
 	defer func() {
 		log.Println("disconnected :" + ipStr)
 		c.conn.Close()
-		c.unreg <- c.uid
+		c.hub.Unreg(c.uid)
 	}()
 	var bytes []byte
 	reader := bufio.NewReader(c.conn)
@@ -40,12 +53,19 @@ func (c *C) run() {
 		if err != nil {
 			return
 		}
-		log.Println(c.uid + ":" + string(bytes))
-		// Here the message is changed to broadcast
-		//boradcastMessage(conn.RemoteAddr().String() + ":" + string(message))
+		c.hub.Broadcast(bytes)
 	}
 }
 
-func (c *C) Uid() string {
-	return c.uid
+func (c *C) Write(bytes []byte) {
+	c.inbox <- bytes
+}
+
+func (c *C) write() {
+	const funcTitle = packageTitle + "write"
+	for bytes := range c.inbox {
+		if _, err := c.conn.Write(bytes); err != nil {
+			log.Println(errors.Wrap(err, funcTitle))
+		}
+	}
 }

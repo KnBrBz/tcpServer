@@ -3,6 +3,7 @@ package hub
 import (
 	"log"
 	"net"
+
 	"tcpServer/server/client"
 	"tcpServer/setup"
 
@@ -10,35 +11,20 @@ import (
 )
 
 type H struct {
-	host    string
-	clients map[string]*client.C
-	reg     chan *client.C
-	unreg   chan string
+	host      string
+	clients   map[string]*client.C
+	reg       chan *client.C
+	unreg     chan string
+	broadcast chan []byte
 }
 
 func New(stp *setup.S) *H {
 	return &H{
-		host:    stp.Host(),
-		clients: make(map[string]*client.C),
-		reg:     make(chan *client.C, 10),
-		unreg:   make(chan string, 10),
-	}
-}
-
-func (h *H) eventsHandler(done <-chan struct{}) {
-	for {
-		select {
-		case c := <-h.reg:
-			uid := c.Uid()
-			log.Println("A client connected : " + uid)
-			h.clients[uid] = c
-			c.Run()
-		case uid := <-h.unreg:
-			log.Println("A client disconnected : " + uid)
-			delete(h.clients, uid)
-		case <-done:
-			return
-		}
+		host:      stp.Host(),
+		clients:   make(map[string]*client.C),
+		reg:       make(chan *client.C, 10),
+		unreg:     make(chan string, 10),
+		broadcast: make(chan []byte, 10),
 	}
 }
 
@@ -62,6 +48,35 @@ func (h *H) Run() (err error) {
 			log.Print(errors.Wrap(err, funcTitle))
 			continue
 		}
-		h.reg <- client.New(tcpConn, h.unreg)
+		h.reg <- client.New(tcpConn, h)
+	}
+}
+
+func (h *H) Broadcast(bytes []byte) {
+	h.broadcast <- bytes
+}
+
+func (h *H) Unreg(uid string) {
+	h.unreg <- uid
+}
+
+func (h *H) eventsHandler(done <-chan struct{}) {
+	for {
+		select {
+		case c := <-h.reg:
+			uid := c.Uid()
+			log.Println("A client connected : " + uid)
+			h.clients[uid] = c
+			c.Run()
+		case uid := <-h.unreg:
+			log.Println("A client disconnected : " + uid)
+			delete(h.clients, uid)
+		case bytes := <-h.broadcast:
+			for _, c := range h.clients {
+				c.Write(bytes)
+			}
+		case <-done:
+			return
+		}
 	}
 }
