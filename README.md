@@ -22,3 +22,9 @@ Implement a client connect to the server.
 ## Test case
 
 10 clients, get broadcast messages and client 1 send message to client 2.
+
+# Setup
+
+## Environment variables
+
+See `.envDist`
