@@ -28,3 +28,11 @@ Implement a client connect to the server.
 ## Environment variables
 
 See `.envDist`
+
+## Tag
+
+Message tag should be at the begining of content:
+
+```
+length 10, content "#test#some"
+```
