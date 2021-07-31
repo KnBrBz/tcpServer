@@ -1,3 +1,6 @@
 package client
 
-const packageTitle = "client: "
+const (
+	packageTitle  = "client: "
+	msgHeadLength = 2
+)

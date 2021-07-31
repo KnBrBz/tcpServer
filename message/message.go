@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/binary"
+	"regexp"
 
 	"github.com/pkg/errors"
 )
@@ -9,6 +10,8 @@ import (
 type M struct {
 	body       []byte
 	headLength int
+	tag        string
+	isValid    bool
 }
 
 func New(headLength int, body []byte) *M {
@@ -18,22 +21,35 @@ func New(headLength int, body []byte) *M {
 	}
 }
 
-func (m *M) Content() (content string, err error) {
-	const funcTitle = packageTitle + "*M.Content"
+func (m *M) Body() []byte {
+	return m.body
+}
+
+func (m *M) Tag() string {
+	return m.tag
+}
+
+func (m *M) Validate(reg *regexp.Regexp) (err error) {
+	const funcTitle = packageTitle + "*M.validate"
+	if m.isValid {
+		return
+	}
 	contentLength, err := m.length()
 	if err != nil {
-		err = errors.Wrapf(err, "%s: wrong message format", funcTitle)
-		return
+		return errors.Wrapf(err, "%s: wrong message format", funcTitle)
 	}
 	if contentLength == 0 {
 		return
 	}
 	totalLength := m.headLength + contentLength
-	if len(m.body) < totalLength {
-		err = errors.Wrapf(errors.New("content is too short"), "%s: wrong message format", funcTitle)
-		return
+	if len(m.body) != totalLength {
+		return errors.Wrapf(errors.New("wrong content length"), "%s: wrong message format", funcTitle)
 	}
-	content = string(m.body[m.headLength:totalLength])
+	m.isValid = true
+	content := m.body[m.headLength:]
+	if loc := reg.FindIndex(content); loc != nil && loc[0] == 0 {
+		m.tag = string(content[:loc[1]])
+	}
 	return
 }
 

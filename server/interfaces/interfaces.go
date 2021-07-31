@@ -1,6 +1,8 @@
 package interfaces
 
+import "tcpServer/message"
+
 type Hub interface {
 	Unreg(uid string)
-	Broadcast(bytes []byte)
+	Broadcast(msg *message.M)
 }
