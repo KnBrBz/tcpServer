@@ -3,6 +3,6 @@ package client
 import "tcpServer/message"
 
 const (
-	packageTitle  = "client: "
+	packageTitle  = "server/client: "
 	msgHeadLength = message.HeadLength
 )

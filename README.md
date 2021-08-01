@@ -29,10 +29,12 @@ Implement a client connect to the server.
 
 See `.envDist`
 
-## Tag
+## Client Tag
 
-Message tag should be at the begining of content:
+Message tag is contents prefix:
 
 ```
-length 10, content "#test#some"
+length 10, content "#1#some"
 ```
+
+Server assign each client a number starting from 1, and evaluates tag based on this number.

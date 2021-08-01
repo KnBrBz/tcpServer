@@ -23,6 +23,8 @@ func main() {
 	go func() {
 		ticker := time.NewTicker(time.Second * 5)
 		timer := time.NewTimer(time.Second * 60)
+		defer ticker.Stop()
+		defer timer.Stop()
 		outbox := cli.Outbox()
 		for {
 			select {

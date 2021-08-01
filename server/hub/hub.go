@@ -8,7 +8,7 @@ import (
 
 	"tcpServer/message"
 	"tcpServer/server/client"
-	"tcpServer/server/setup"
+	"tcpServer/server/interfaces"
 
 	"github.com/pkg/errors"
 )
@@ -20,15 +20,17 @@ type H struct {
 	unreg     chan string
 	broadcast chan *message.M
 	tagNumber uint64
+	done      chan struct{}
 }
 
-func New(stp *setup.S) *H {
+func New(stp interfaces.Setup) *H {
 	return &H{
 		host:      stp.Host(),
 		clients:   make(map[string]*client.C),
 		reg:       make(chan *client.C, 10),
 		unreg:     make(chan string, 10),
 		broadcast: make(chan *message.M, 10),
+		done:      make(chan struct{}),
 	}
 }
 
@@ -44,17 +46,24 @@ func (h *H) Run() (err error) {
 		return errors.Wrap(err, funcTitle)
 	}
 	defer tcpListener.Close()
-	done := make(chan struct{})
-	go h.eventsHandler(done, tagReg)
-	defer close(done)
+	go h.eventsHandler(tagReg)
 	for {
-		tcpConn, err := tcpListener.AcceptTCP()
-		if err != nil {
-			log.Print(errors.Wrap(err, funcTitle))
-			continue
+		select {
+		case <-h.done:
+			return
+		default:
+			tcpConn, err := tcpListener.AcceptTCP()
+			if err != nil {
+				log.Print(errors.Wrap(err, funcTitle))
+				continue
+			}
+			h.reg <- client.New(tcpConn, h, h.nextTag(), tagReg)
 		}
-		h.reg <- client.New(tcpConn, h, h.nextTag(), tagReg)
 	}
+}
+
+func (h *H) Stop() {
+	close(h.done)
 }
 
 func (h *H) Broadcast(msg *message.M) {
@@ -65,7 +74,7 @@ func (h *H) Unreg(uid string) {
 	h.unreg <- uid
 }
 
-func (h *H) eventsHandler(done <-chan struct{}, tagReg *regexp.Regexp) {
+func (h *H) eventsHandler(tagReg *regexp.Regexp) {
 	for {
 		select {
 		case c := <-h.reg:
@@ -80,7 +89,7 @@ func (h *H) eventsHandler(done <-chan struct{}, tagReg *regexp.Regexp) {
 			for _, c := range h.clients {
 				c.Write(msg)
 			}
-		case <-done:
+		case <-h.done:
 			return
 		}
 	}
