@@ -24,6 +24,7 @@ func New(stp interfaces.Setup) *C {
 		srvHost: stp.ServerHost(),
 		host:    stp.Host(),
 		done:    make(chan struct{}),
+		outbox:  make(chan []byte),
 	}
 }
 
@@ -78,19 +79,24 @@ func (c *C) Stop() {
 
 func (c *C) read(conn *net.TCPConn) {
 	const funcTitle = packageTitle + "*C.Read"
-	var bytes []byte
+	var bytes []byte = make([]byte, 0xffff+2)
 	reader := bufio.NewReader(conn)
 	for {
-		_, err := reader.Read(bytes)
-		if err != nil {
-			log.Print(errors.Wrap(err, funcTitle))
-			break
+		select {
+		case <-c.done:
+			return
+		default:
+			n, err := reader.Read(bytes)
+			if err != nil {
+				log.Print(errors.Wrap(err, funcTitle))
+				break
+			}
+			msg := message.New(message.HeadLength, bytes[:n])
+			if err := msg.Validate(nil); err != nil {
+				log.Printf("Outbox message `%s` not valid: %v", msg.Body(), err)
+				continue
+			}
+			c.outbox <- msg.Body()
 		}
-		msg := message.New(message.HeadLength, bytes)
-		if err := msg.Validate(nil); err != nil {
-			log.Printf("Outbox message `%s` not valid: %v", msg.Body(), err)
-			continue
-		}
-		c.outbox <- bytes
 	}
 }

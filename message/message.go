@@ -15,8 +15,10 @@ type M struct {
 }
 
 func New(headLength int, body []byte) *M {
+	dest := make([]byte, len(body))
+	copy(dest, body)
 	return &M{
-		body:       body,
+		body:       dest,
 		headLength: headLength,
 	}
 }

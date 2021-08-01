@@ -38,30 +38,34 @@ func (c *C) Uid() string {
 }
 
 func (c *C) Run() {
-	go c.read()
-	go c.write()
+	done := make(chan struct{})
+	go c.read(done)
+	go c.write(done)
 }
 
 func (c *C) Send(msg *message.M) {
 	c.inbox <- msg
 }
 
-func (c *C) read() {
+func (c *C) read(done chan struct{}) {
 	const funcTitle = packageTitle + "*C.read"
 	ipStr := c.conn.RemoteAddr().String()
 	defer func() {
-		log.Println("disconnected :" + ipStr)
-		c.conn.Close()
+		log.Println("disconnected: " + ipStr)
 		c.hub.Unreg(c.req.UID)
+		close(done)
+		c.conn.Close()
 	}()
-	var bytes []byte
+
+	var bytes []byte = make([]byte, 0xffff+2)
 	reader := bufio.NewReader(c.conn)
 	for {
-		_, err := reader.Read(bytes)
+		n, err := reader.Read(bytes)
 		if err != nil {
+			log.Print(errors.Wrap(err, funcTitle))
 			return
 		}
-		msg := message.New(msgHeadLength, bytes)
+		msg := message.New(msgHeadLength, bytes[:n])
 		if err := msg.Validate(c.tagReg); err != nil {
 			log.Print(errors.Wrapf(err, "%s, client %s", funcTitle, c.Uid()))
 			continue
@@ -74,14 +78,20 @@ func (c *C) Write(msg *message.M) {
 	c.inbox <- msg
 }
 
-func (c *C) write() {
+func (c *C) write(done chan struct{}) {
 	const funcTitle = packageTitle + "write"
-	for msg := range c.inbox {
-		if tag := msg.Tag(); len(tag) > 0 && tag != c.req.Tag {
+	for {
+		select {
+		case msg := <-c.inbox:
+			if tag := msg.Tag(); len(tag) > 0 && tag != c.req.Tag {
+				log.Printf("skip tag `%s`, client tag `%s`", tag, c.req.Tag)
+				continue
+			}
+			if _, err := c.conn.Write(msg.Body()); err != nil {
+				log.Println(errors.Wrap(err, funcTitle))
+			}
+		case <-done:
 			return
-		}
-		if _, err := c.conn.Write(msg.Body()); err != nil {
-			log.Println(errors.Wrap(err, funcTitle))
 		}
 	}
 }

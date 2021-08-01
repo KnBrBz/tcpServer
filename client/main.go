@@ -27,9 +27,9 @@ func main() {
 		for {
 			select {
 			case bytes := <-outbox:
-				log.Printf("Sever message: %s", bytes)
+				log.Printf("Server message: %s", bytes)
 			case <-ticker.C:
-				cli.Send(append([]byte{0x00, 0x08}, []byte("#foo#bar")...))
+				cli.Send(append([]byte{0x00, 0x08}, []byte("bar#foo#")...))
 			case <-timer.C:
 				cli.Stop()
 			}
