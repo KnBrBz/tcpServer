@@ -6,9 +6,10 @@ import (
 	"net"
 	"regexp"
 
-	"tcpServer/message"
 	"tcpServer/server/client"
 	"tcpServer/server/interfaces"
+
+	"github.com/KnBrBz/message"
 
 	"github.com/pkg/errors"
 )

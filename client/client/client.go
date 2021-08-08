@@ -5,7 +5,8 @@ import (
 	"log"
 	"net"
 	"tcpServer/client/interfaces"
-	"tcpServer/message"
+
+	"github.com/KnBrBz/message"
 
 	"github.com/pkg/errors"
 )
@@ -52,7 +53,7 @@ func (c *C) Run() (err error) {
 	for {
 		select {
 		case bytes := <-c.inbox:
-			msg := message.New(message.HeadLength, bytes)
+			msg := message.New(headLength, bytes)
 			if err := msg.Validate(nil); err != nil {
 				log.Printf("Inbox message `%s` not valid: %v", msg.Body(), err)
 			}
@@ -91,7 +92,7 @@ func (c *C) read(conn *net.TCPConn) {
 				log.Print(errors.Wrap(err, funcTitle))
 				break
 			}
-			msg := message.New(message.HeadLength, bytes[:n])
+			msg := message.New(headLength, bytes[:n])
 			if err := msg.Validate(nil); err != nil {
 				log.Printf("Outbox message `%s` not valid: %v", msg.Body(), err)
 				continue

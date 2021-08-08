@@ -16,3 +16,6 @@
 
 # env
 .env
+
+# docs
+docs/build
