@@ -1,6 +1,6 @@
 package interfaces
 
-import "tcpServer/message"
+import "github.com/KnBrBz/message"
 
 type Hub interface {
 	Unreg(uid string)
