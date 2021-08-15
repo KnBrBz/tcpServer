@@ -1,0 +1,60 @@
+linters:
+  enable:
+    - gofmt
+    - revive
+    - goimports
+    - unparam
+    - unconvert    
+    - megacheck
+    - staticcheck
+    - unused
+    - gosimple
+    - dupl
+    - goconst
+    #- gocyclo
+    - nakedret
+    - exportloopref
+    - gocritic
+    - misspell
+    - asciicheck
+    - bodyclose
+    # - cyclop
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - errorlint
+    - exhaustive
+    # - exhaustivestruct
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    # - funlen
+    - gochecknoglobals
+    # - gocognit
+    - goconst    
+    - goerr113
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - lll
+    - makezero
+    - misspell
+    - nakedret
+    - nestif    
+    - nilerr
+    - noctx
+    - prealloc
+    - predeclared
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - wastedassign
+    - wrapcheck
+    - wsl
+linters-settings:
+  gosec:   
+    # To specify a set of rules to explicitly exclude.
+    # Available rules: https://github.com/securego/gosec#available-rules
+    excludes:
+      - G404 # Insecure random number source (rand)
