@@ -88,7 +88,7 @@ func (c *C) Stop() {
 func (c *C) read(conn *net.TCPConn) {
 	const funcTitle = packageTitle + "*C.Read"
 
-	var bytes = make([]byte, 0, cnst.MessageMaxCap)
+	var bytes = make([]byte, cnst.MessageMaxCap)
 
 	reader := bufio.NewReader(conn)
 
