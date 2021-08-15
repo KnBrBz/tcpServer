@@ -18,6 +18,7 @@ func readString(key, defaultValue string) (value string) {
 	if value = os.Getenv(key); len(value) > 0 {
 		return
 	}
+
 	return defaultValue
 }
 

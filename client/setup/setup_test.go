@@ -16,7 +16,9 @@ func TestSetupHost(t *testing.T) {
 	if err := godotenv.Load(".envExm"); err != nil {
 		t.Fatal(err)
 	}
+
 	stp = New()
+
 	if host := stp.Host(); host == envHostDefault || len(host) == 0 {
 		t.Fatalf("host expected to be not default and not empty, got `%s`", host)
 	}

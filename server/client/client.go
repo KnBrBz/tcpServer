@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"regexp"
+	"tcpServer/cnst"
 	"tcpServer/server/client/requisites"
 	"tcpServer/server/interfaces"
 
@@ -34,7 +35,7 @@ func New(conn *net.TCPConn, hub interfaces.Hub, tag string, tagReg *regexp.Regex
 	}
 }
 
-func (c *C) Uid() string {
+func (c *C) UID() string {
 	return c.req.UID
 }
 
@@ -50,6 +51,7 @@ func (c *C) Send(msg *message.M) {
 
 func (c *C) read(done chan struct{}) {
 	const funcTitle = packageTitle + "*C.read"
+
 	ipStr := c.conn.RemoteAddr().String()
 	defer func() {
 		log.Println("disconnected: " + ipStr)
@@ -58,19 +60,24 @@ func (c *C) read(done chan struct{}) {
 		c.conn.Close()
 	}()
 
-	var bytes []byte = make([]byte, 0xffff+2)
+	var bytes = make([]byte, cnst.MessageMaxCap)
+
 	reader := bufio.NewReader(c.conn)
+
 	for {
 		n, err := reader.Read(bytes)
 		if err != nil {
 			log.Print(errors.Wrap(err, funcTitle))
 			return
 		}
+
 		msg := message.New(msgHeadLength, bytes[:n])
+
 		if err := msg.Validate(c.tagReg); err != nil {
-			log.Print(errors.Wrapf(err, "%s, client %s", funcTitle, c.Uid()))
+			log.Print(errors.Wrapf(err, "%s, client %s", funcTitle, c.UID()))
 			continue
 		}
+
 		c.hub.Broadcast(msg)
 	}
 }
@@ -81,6 +88,7 @@ func (c *C) Write(msg *message.M) {
 
 func (c *C) write(done chan struct{}) {
 	const funcTitle = packageTitle + "write"
+
 	for {
 		select {
 		case msg := <-c.inbox:
@@ -88,6 +96,7 @@ func (c *C) write(done chan struct{}) {
 				log.Printf("skip tag `%s`, client tag `%s`", tag, c.req.Tag)
 				continue
 			}
+
 			if _, err := c.conn.Write(msg.Body()); err != nil {
 				log.Println(errors.Wrap(err, funcTitle))
 			}

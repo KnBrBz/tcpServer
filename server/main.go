@@ -11,6 +11,7 @@ import (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
 	if err := godotenv.Load(); err != nil {
 		log.Print("WARNING ", errors.Wrap(err, "init"))
 		log.Print("Loading default setup")
@@ -23,6 +24,7 @@ func main() {
 			log.Print("main: ", err)
 		}
 	}()
+
 	if err := hub.New(
 		setup.New(),
 	).Run(); err != nil {

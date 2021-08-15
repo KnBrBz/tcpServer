@@ -12,6 +12,7 @@ import (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
 	if err := godotenv.Load(); err != nil {
 		log.Print("WARNING ", errors.Wrap(err, "init"))
 		log.Print("Loading default setup")
@@ -19,13 +20,22 @@ func init() {
 }
 
 func main() {
+	const (
+		sendInterval = time.Second * 5
+		timeout      = time.Second * 60
+	)
+
 	cli := client.New(setup.New())
+
 	go func() {
-		ticker := time.NewTicker(time.Second * 5)
-		timer := time.NewTimer(time.Second * 60)
+		ticker := time.NewTicker(sendInterval)
+		timer := time.NewTimer(timeout)
+
 		defer ticker.Stop()
 		defer timer.Stop()
+
 		outbox := cli.Outbox()
+
 		for {
 			select {
 			case bytes := <-outbox:

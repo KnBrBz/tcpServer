@@ -6,6 +6,8 @@ import (
 	"net"
 	"tcpServer/client/interfaces"
 
+	"tcpServer/cnst"
+
 	"github.com/KnBrBz/message"
 
 	"github.com/pkg/errors"
@@ -31,17 +33,21 @@ func New(stp interfaces.Setup) *C {
 
 func (c *C) Run() (err error) {
 	const funcTitle = packageTitle + "*C.Run"
+
 	var tcpAddr, laddr *net.TCPAddr
 
 	if c.srvHost == c.host {
 		return errors.Wrap(errors.Errorf("host %s already specified as server host", c.host), funcTitle)
 	}
+
 	if tcpAddr, err = net.ResolveTCPAddr("tcp", c.srvHost); err != nil {
 		return errors.Wrapf(err, "%s: server host", funcTitle)
 	}
+
 	if laddr, err = net.ResolveTCPAddr("tcp", c.host); err != nil {
 		return errors.Wrapf(err, "%s: host", funcTitle)
 	}
+
 	conn, err := net.DialTCP("tcp", laddr, tcpAddr)
 	if err != nil {
 		return errors.Wrap(err, funcTitle)
@@ -57,6 +63,7 @@ func (c *C) Run() (err error) {
 			if err := msg.Validate(nil); err != nil {
 				log.Printf("Inbox message `%s` not valid: %v", msg.Body(), err)
 			}
+
 			if _, err := conn.Write(msg.Body()); err != nil {
 				return errors.Wrap(err, funcTitle)
 			}
@@ -80,8 +87,11 @@ func (c *C) Stop() {
 
 func (c *C) read(conn *net.TCPConn) {
 	const funcTitle = packageTitle + "*C.Read"
-	var bytes []byte = make([]byte, 0xffff+2)
+
+	var bytes = make([]byte, cnst.MessageMaxCap)
+
 	reader := bufio.NewReader(conn)
+
 	for {
 		select {
 		case <-c.done:
@@ -92,7 +102,9 @@ func (c *C) read(conn *net.TCPConn) {
 				log.Print(errors.Wrap(err, funcTitle))
 				break
 			}
+
 			msg := message.New(headLength, bytes[:n])
+
 			if err := msg.Validate(nil); err != nil {
 				log.Printf("Outbox message `%s` not valid: %v", msg.Body(), err)
 				continue
