@@ -19,3 +19,6 @@
 
 # docs
 docs/build
+
+# golangci config
+.golangci.yml
