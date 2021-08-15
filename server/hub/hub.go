@@ -32,6 +32,7 @@ func New(stp interfaces.Setup) *H {
 		unreg:     make(chan string, capacity),
 		broadcast: make(chan *message.M, capacity),
 		done:      make(chan struct{}),
+		tagNumber: 0,
 	}
 }
 
