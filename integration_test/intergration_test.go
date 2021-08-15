@@ -44,6 +44,7 @@ func TestClientsServer(t *testing.T) {
 		clientHost := mainHost + strconv.Itoa(serverPort-i-1)
 		cli := client.New(fakesetup.NewClients(clientHost, serverHost))
 		clis[i] = cli
+
 		go func() {
 			if err := cli.Run(); err != nil {
 				errChan <- err
@@ -58,13 +59,18 @@ func TestClientsServer(t *testing.T) {
 	}
 	// send message
 	msg := append([]byte{0x00, 0x08}, []byte("bar#foo#")...)
+
 	var wg sync.WaitGroup
+
 	wg.Add(len(clis))
+
 	for i, cli := range clis {
 		go func(i int, cli *client.C) {
 			defer wg.Done()
+
 			outbox := cli.Outbox()
 			timer := time.NewTimer(time.Second)
+
 			defer timer.Stop()
 			select {
 			case cliMsg := <-outbox:
@@ -76,6 +82,7 @@ func TestClientsServer(t *testing.T) {
 			}
 		}(i, cli)
 	}
+
 	i := rand.Intn(10)
 	clis[i].Send(msg)
 	wg.Wait()
@@ -87,17 +94,19 @@ func TestClientsServer(t *testing.T) {
 	// send tagged message
 	srcI := rand.Intn(10)
 	dstTag := intToTag(rand.Intn(10) + 1)
-
 	content := []byte(dstTag + "foobar")
-	head := int16ToBytes(int16(len(content)))
-	msg = append(head, content...)
-	wg.Add(len(clis))
+	msg = append(int16ToBytes(int16(len(content))), content...)
 	flag := &boolFlag{}
+
+	wg.Add(len(clis))
+
 	for i, cli := range clis {
 		go func(i int, cli *client.C) {
 			defer wg.Done()
+
 			outbox := cli.Outbox()
 			timer := time.NewTimer(time.Second)
+
 			defer timer.Stop()
 			select {
 			case cliMsg := <-outbox:
@@ -108,6 +117,7 @@ func TestClientsServer(t *testing.T) {
 					if !assertBytesEqual(cliMsg, msg) {
 						errChan <- errors.Errorf("client `%d`: expected message `%s`, got `%s`", i, msg, cliMsg)
 					}
+
 					flag.Set(true)
 				}
 			case <-timer.C:
@@ -117,7 +127,8 @@ func TestClientsServer(t *testing.T) {
 			}
 		}(i, cli)
 	}
-	clis[srcI].Send(msg) // TODO it is possible to send message to myself, because we don't know clients tag, but message should be received only once
+
+	clis[srcI].Send(msg) // TODO it is possible to send message to myself, because we don't know clients tag
 	wg.Wait()
 	select {
 	case err := <-errChan:
@@ -140,6 +151,7 @@ func (bf *boolFlag) Set(value bool) {
 func (bf *boolFlag) Read() bool {
 	bf.mux.RLock()
 	defer bf.mux.RUnlock()
+
 	return bf.value
 }
 
@@ -156,10 +168,12 @@ func assertBytesEqual(a, b []byte) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i := range a {
 		if a[i] != b[i] {
 			return false
 		}
 	}
+
 	return true
 }

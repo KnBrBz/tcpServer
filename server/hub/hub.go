@@ -28,26 +28,31 @@ func New(stp interfaces.Setup) *H {
 	return &H{
 		host:      stp.Host(),
 		clients:   make(map[string]*client.C),
-		reg:       make(chan *client.C, 10),
-		unreg:     make(chan string, 10),
-		broadcast: make(chan *message.M, 10),
+		reg:       make(chan *client.C, capacity),
+		unreg:     make(chan string, capacity),
+		broadcast: make(chan *message.M, capacity),
 		done:      make(chan struct{}),
 	}
 }
 
 func (h *H) Run() (err error) {
 	const funcTitle = packageTitle + "*H.Run"
+
 	tagReg := regexp.MustCompile("#.+#")
+
 	tcpAddr, err := net.ResolveTCPAddr("tcp", h.host)
 	if err != nil {
 		return errors.Wrap(err, funcTitle)
 	}
+
 	tcpListener, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
 		return errors.Wrap(err, funcTitle)
 	}
 	defer tcpListener.Close()
-	go h.eventsHandler(tagReg)
+
+	go h.eventsHandler()
+
 	for {
 		select {
 		case <-h.done:
@@ -75,13 +80,15 @@ func (h *H) Unreg(uid string) {
 	h.unreg <- uid
 }
 
-func (h *H) eventsHandler(tagReg *regexp.Regexp) {
+func (h *H) eventsHandler() {
 	for {
 		select {
 		case c := <-h.reg:
-			uid := c.Uid()
+			uid := c.UID()
 			log.Println("A client connected : " + uid)
+
 			h.clients[uid] = c
+
 			c.Run()
 		case uid := <-h.unreg:
 			log.Println("A client disconnected : " + uid)
